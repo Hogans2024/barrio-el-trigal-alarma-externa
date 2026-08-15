@@ -8,7 +8,7 @@
  * (políticas de autoplay) y la sirena fallaría en silencio en producción.
  */
 import { iniciarEscuchaAlarma, type EstadoConexionAbly } from './ablySubscriber';
-import { stopSiren } from './audioSiren';
+import { startSiren, stopSiren } from './audioSiren';
 
 const STATUS_ALARMA = document.getElementById('estado-alarma') as HTMLDivElement;
 const STATUS_CONEXION = document.getElementById('estado-conexion') as HTMLDivElement;
@@ -37,19 +37,19 @@ function actualizarEstadoConexion(estado: EstadoConexionAbly): void {
 }
 
 /**
- * Desbloquea el AudioContext dentro del gesto de usuario (click). Crea y
- * resuelve un contexto una sola vez; cualquier audio posterior (sirena,
- * chunks de voz) podrá reproducirse sin restricciones de autoplay.
+ * Desbloquea el AudioContext real dentro del gesto de usuario (click).
+ * En lugar de crear un contexto descartable y separado (que Safari/iOS
+ * desbloquea y descarta, sin garantizar el estado del AudioContext interno
+ * de audioSiren.ts), se dispara brevemente la propia sirena: esto fuerza
+ * que `audioCtx` (la instancia privada del módulo, la misma que se
+ * reutilizará con el evento real de Ably) se cree y quede desbloqueada
+ * dentro del gesto genuino de clic. Se detiene a los 50ms.
  */
 function desbloquearAudio(): void {
-  const AudioContextClass = window.AudioContext || (window as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
-  if (!AudioContextClass) return;
-  const ctx = new AudioContextClass();
-  if (ctx.state === 'suspended') {
-    ctx.resume();
-  }
-  // Se deja vivo el contexto para que la sirena lo reutilice sin volver a
-  // suspenderse; si el navegador lo suspende solo, startSiren() lo reanuda.
+  startSiren();
+  setTimeout(() => {
+    stopSiren();
+  }, 50);
 }
 
 BTN_HABILITAR.addEventListener('click', () => {
