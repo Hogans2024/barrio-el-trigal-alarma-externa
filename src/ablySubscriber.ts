@@ -135,6 +135,11 @@ export function iniciarEscuchaAlarma(
   channel.subscribe('voz_inicio', (msg) => {
     const { mimeType } = msg.data as { mimeType?: string };
     if (mimeType) setMimeTypeVoz(mimeType);
+    // Nueva transmisión: limpiar SIEMPRE el estado previo. Si la transmisión
+    // anterior terminó mal (chunk final que llegó después del 'voz_fin',
+    // quedando un MediaSource "huérfano" con transmisionActiva=true), este
+    // reset evita que la voz nueva se pierda en silencio.
+    reiniciarColaVoz();
   });
 
   channel.subscribe('voz_chunk', (msg) => {
