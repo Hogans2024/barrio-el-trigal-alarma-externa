@@ -17,6 +17,7 @@
  */
 import Ably from 'ably';
 import { startSiren, stopSiren } from './audioSiren';
+import { reproducirChunkVoz, reiniciarColaVoz } from './voicePlayer';
 
 const ABLY_SUBSCRIBE_KEY = import.meta.env.VITE_ABLY_SUBSCRIBE_KEY as string | undefined;
 const ALARMA_CHANNEL_NAME = 'barrio-trigal:alarma';
@@ -125,5 +126,26 @@ export function iniciarEscuchaAlarma(
     alarmaActivaSirenId = null;
     stopSiren();
     onEstadoCambia(false);
+  });
+
+  // ---- Fase 6: voz en tiempo real (mismo canal, eventos de voz) ----
+  // Página A publica los chunks de voz en el canal de la alarma con el evento
+  // 'voz_chunk' (payload binario) y 'voz_fin' al soltar el botón. Aquí solo se
+  // reproduce la voz; la sirena NUNCA se dispara por eventos de voz.
+  channel.subscribe('voz_chunk', (msg) => {
+    const data = msg.data;
+    if (data instanceof ArrayBuffer) {
+      reproducirChunkVoz(data);
+    } else if (ArrayBuffer.isView(data)) {
+      // Algunos clientes entregan el binario como vista (Uint8Array/DataView).
+      const view = data as ArrayBufferView;
+      reproducirChunkVoz(view.buffer.slice(view.byteOffset, view.byteOffset + view.byteLength));
+    } else {
+      console.warn('[Voz] Chunk de voz en formato inesperado:', typeof data);
+    }
+  });
+
+  channel.subscribe('voz_fin', () => {
+    reiniciarColaVoz();
   });
 }

@@ -9,6 +9,7 @@
  */
 import { iniciarEscuchaAlarma, type EstadoConexionAbly } from './ablySubscriber';
 import { startSiren, stopSiren } from './audioSiren';
+import { desbloquearAudioVoz } from './voicePlayer';
 
 const STATUS_ALARMA = document.getElementById('estado-alarma') as HTMLDivElement;
 const STATUS_CONEXION = document.getElementById('estado-conexion') as HTMLDivElement;
@@ -47,6 +48,7 @@ function actualizarEstadoConexion(estado: EstadoConexionAbly): void {
  */
 function desbloquearAudio(): void {
   startSiren();
+  desbloquearAudioVoz();
   setTimeout(() => {
     stopSiren();
   }, 50);
