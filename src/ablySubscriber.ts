@@ -17,7 +17,7 @@
  */
 import Ably from 'ably';
 import { startSiren, stopSiren } from './audioSiren';
-import { reproducirChunkVoz, reiniciarColaVoz } from './voicePlayer';
+import { reproducirChunkVoz, reiniciarColaVoz, setMimeTypeVoz } from './voicePlayer';
 
 const ABLY_SUBSCRIBE_KEY = import.meta.env.VITE_ABLY_SUBSCRIBE_KEY as string | undefined;
 const ALARMA_CHANNEL_NAME = 'barrio-trigal:alarma';
@@ -132,6 +132,11 @@ export function iniciarEscuchaAlarma(
   // Página A publica los chunks de voz en el canal de la alarma con el evento
   // 'voz_chunk' (payload binario) y 'voz_fin' al soltar el botón. Aquí solo se
   // reproduce la voz; la sirena NUNCA se dispara por eventos de voz.
+  channel.subscribe('voz_inicio', (msg) => {
+    const { mimeType } = msg.data as { mimeType?: string };
+    if (mimeType) setMimeTypeVoz(mimeType);
+  });
+
   channel.subscribe('voz_chunk', (msg) => {
     const data = msg.data;
     if (data instanceof ArrayBuffer) {
