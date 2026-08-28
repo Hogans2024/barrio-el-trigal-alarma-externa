@@ -17,6 +17,7 @@
  */
 import Ably from 'ably';
 import { startSiren, stopSiren } from './audioSiren';
+import { establecerLinterna } from './kodularBridge';
 import { reproducirChunkVoz, reiniciarColaVoz, setMimeTypeVoz } from './voicePlayer';
 
 const ABLY_SUBSCRIBE_KEY = import.meta.env.VITE_ABLY_SUBSCRIBE_KEY as string | undefined;
@@ -65,6 +66,7 @@ async function recuperarEstadoActual(
     console.info('[Ably] Estado actual recuperado del historial: alarma activa (%s).', sirenId);
     alarmaActivaSirenId = sirenId;
     startSiren();
+    establecerLinterna(true);
     onEstadoCambia(true);
   } catch (err) {
     // Fallo benigno: la escucha en vivo sigue funcionando aunque no se pueda
@@ -116,6 +118,7 @@ export function iniciarEscuchaAlarma(
     if (alarmaActivaSirenId === sirenId) return;
     alarmaActivaSirenId = sirenId;
     startSiren();
+    establecerLinterna(true);
     onEstadoCambia(true);
   });
 
@@ -125,6 +128,7 @@ export function iniciarEscuchaAlarma(
     if (alarmaActivaSirenId !== sirenId) return; // evento de una sesión distinta/vieja, ignorar
     alarmaActivaSirenId = null;
     stopSiren();
+    establecerLinterna(false);
     onEstadoCambia(false);
   });
 
